@@ -3,7 +3,7 @@
 // Limit this example to only compatible platforms.
 #[cfg(any(windows_platform, macos_platform, x11_platform, wayland_platform,))]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    use std::time::Duration;
+    use std::time::{Duration, Instant};
 
     use winit::application::ApplicationHandler;
     use winit::event::WindowEvent;
@@ -14,11 +14,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[path = "util/fill.rs"]
     mod fill;
 
+    struct InstantWrapper {
+        start: Instant,
+    }
+
+    impl Default for InstantWrapper {
+        fn default() -> Self {
+            Self { start: Instant::now() }
+        }
+    }
+
     #[derive(Default)]
     struct App {
         idx: usize,
         window_id: Option<WindowId>,
         window: Option<Window>,
+        fps_cycle: InstantWrapper,
+        fps: u64,
     }
 
     impl ApplicationHandler for App {
@@ -70,6 +82,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 },
                 WindowEvent::RedrawRequested => {
                     fill::fill_window(window);
+                    std::thread::sleep(Duration::from_millis(50)); // Simulate heavy workload
+                    self.fps += 1;
+                    let elapsed = self.fps_cycle.start.elapsed();
+                    if elapsed.as_secs() >= 1 {
+                        println!("FPS: {:.2}", self.fps as f64 / elapsed.as_secs_f64());
+                        self.fps = 0;
+                        self.fps_cycle.start = Instant::now();
+                    }
                 },
                 _ => (),
             }
