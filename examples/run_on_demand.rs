@@ -31,6 +31,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         window: Option<Window>,
         fps_cycle: InstantWrapper,
         fps: u64,
+
+        fps_report_count: u64,
     }
 
     impl ApplicationHandler for App {
@@ -41,9 +43,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+            // maximize the window
             let window_attributes = Window::default_attributes()
                 .with_title("Fantastic window number one!")
-                .with_inner_size(winit::dpi::LogicalSize::new(128.0, 128.0));
+                .with_inner_size(winit::dpi::LogicalSize::new(128.0, 128.0))
+                .with_maximized(true);
             let window = event_loop.create_window(window_attributes).unwrap();
             self.window_id = Some(window.id());
             self.window = Some(window);
@@ -89,6 +93,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         println!("FPS: {:.2}", self.fps as f64 / elapsed.as_secs_f64());
                         self.fps = 0;
                         self.fps_cycle.start = Instant::now();
+                        self.fps_report_count += 1;
+                        if self.fps_report_count >= 2 {
+                            self.fps_report_count = 0;
+                            event_loop.exit();
+                        }
                     }
                 },
                 _ => (),
