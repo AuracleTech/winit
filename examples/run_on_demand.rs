@@ -103,13 +103,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut app = App { idx: 1, ..Default::default() };
     event_loop.run_app_on_demand(&mut app)?;
 
-    println!("--------------------------------------------------------- Finished first loop");
-    println!("--------------------------------------------------------- Waiting 5 seconds");
-    std::thread::sleep(Duration::from_secs(5));
+    // println!("--------------------------------------------------------- Finished first loop");
+    // println!("--------------------------------------------------------- Waiting 5 seconds");
+    // std::thread::sleep(Duration::from_secs(5));
 
-    app.idx += 1;
-    event_loop.run_app_on_demand(&mut app)?;
-    println!("--------------------------------------------------------- Finished second loop");
+    // app.idx += 1;
+    // event_loop.run_app_on_demand(&mut app)?;
+    // println!("--------------------------------------------------------- Finished second loop");
     Ok(())
 }
 
