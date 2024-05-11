@@ -777,7 +777,7 @@ impl Window {
                 // Calling `PeekMessageW` here notifies Windows that our process is still running
                 // fine, taking control back from the DWM and ensuring that the `SetWindowPos` call
                 // below goes through.
-                let mut msg = mem::zeroed();
+                let mut msg = std::mem::MaybeUninit::zeroed().assume_init();
                 PeekMessageW(&mut msg, 0, 0, 0, PM_NOREMOVE);
             }
 

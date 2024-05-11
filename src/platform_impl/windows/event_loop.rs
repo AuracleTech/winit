@@ -412,7 +412,7 @@ impl<T: 'static> EventLoop<T> {
         // initializing a `MSG` struct (it can be uninitialized memory for the C
         // API) and there's no API to construct or initialize a `MSG`. This
         // is the simplest way avoid uninitialized memory in Rust
-        let mut msg = unsafe { mem::zeroed() };
+        let mut msg = unsafe { std::mem::MaybeUninit::zeroed().assume_init() };
         let msg_status = wait_for_msg(&mut msg, timeout);
 
         // Before we potentially exit, make sure to consistently emit an event for the wake up
@@ -460,7 +460,7 @@ impl<T: 'static> EventLoop<T> {
         // initializing a `MSG` struct (it can be uninitialized memory for the C
         // API) and there's no API to construct or initialize a `MSG`. This
         // is the simplest way avoid uninitialized memory in Rust
-        let mut msg = unsafe { mem::zeroed() };
+        let mut msg = unsafe { std::mem::MaybeUninit::zeroed().assume_init() };
 
         loop {
             unsafe {
