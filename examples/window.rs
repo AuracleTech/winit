@@ -6,6 +6,7 @@ use std::fmt::Debug;
 #[cfg(not(any(android_platform, ios_platform)))]
 use std::num::NonZeroU32;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 use std::{fmt, mem};
 
 use ::tracing::{error, info};
@@ -42,7 +43,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     #[cfg(web_platform)]
     console_error_panic_hook::set_once();
 
-    tracing::init();
+    // tracing::init();
 
     let event_loop = EventLoop::<UserEvent>::with_user_event().build()?;
     let _event_loop_proxy = event_loop.create_proxy();
@@ -82,6 +83,9 @@ struct Application {
     /// With OpenGL it could be EGLDisplay.
     #[cfg(not(any(android_platform, ios_platform)))]
     context: Option<Context<DisplayHandle<'static>>>,
+
+    fps: u64,
+    fps_cycle: Instant,
 }
 
 impl Application {
@@ -117,6 +121,9 @@ impl Application {
             custom_cursors,
             icon,
             windows: Default::default(),
+
+            fps: 0,
+            fps_cycle: Instant::now(),
         }
     }
 
@@ -340,6 +347,18 @@ impl ApplicationHandler<UserEvent> for Application {
                 if let Err(err) = window.draw() {
                     error!("Error drawing window: {err}");
                 }
+
+                std::thread::sleep(Duration::from_millis(50)); // Simulate heavy workload
+
+                self.fps += 1;
+                let elapsed = self.fps_cycle.elapsed();
+                if elapsed.as_secs() >= 1 {
+                    println!("FPS: {:.2}", self.fps as f64 / elapsed.as_secs_f64());
+                    self.fps = 0;
+                    self.fps_cycle = Instant::now();
+                }
+
+                window.window.request_redraw();
             },
             WindowEvent::Occluded(occluded) => {
                 window.set_occluded(occluded);
