@@ -462,12 +462,12 @@ impl<T: 'static> EventLoop<T> {
         // is the simplest way avoid uninitialized memory in Rust
         let mut msg = unsafe { std::mem::MaybeUninit::zeroed().assume_init() };
 
+        // crate::stopwatch!({
         loop {
             unsafe {
                 if PeekMessageW(&mut msg, 0, 0, 0, PM_REMOVE) == false.into() {
                     break;
                 }
-
                 let handled = if let Some(callback) = self.msg_hook.as_deref_mut() {
                     callback(&mut msg as *mut _ as *mut _)
                 } else {
@@ -477,21 +477,21 @@ impl<T: 'static> EventLoop<T> {
                     TranslateMessage(&msg);
                     DispatchMessageW(&msg);
                 }
-            }
+                if let Err(payload) = runner.take_panic_error() {
+                    runner.reset_runner();
+                    panic::resume_unwind(payload);
+                }
 
-            if let Err(payload) = runner.take_panic_error() {
-                runner.reset_runner();
-                panic::resume_unwind(payload);
-            }
+                if let Some(_code) = runner.exit_code() {
+                    break;
+                }
 
-            if let Some(_code) = runner.exit_code() {
-                break;
-            }
-
-            if runner.interrupt_msg_dispatch.get() {
-                break;
+                if runner.interrupt_msg_dispatch.get() {
+                    break;
+                }
             }
         }
+        // });
     }
 
     pub fn create_proxy(&self) -> EventLoopProxy<T> {
@@ -504,6 +504,18 @@ impl<T: 'static> EventLoop<T> {
     fn exit_code(&self) -> Option<i32> {
         self.window_target.p.exit_code()
     }
+}
+
+#[macro_export]
+macro_rules! stopwatch {
+    ($func:expr) => {{
+        let start_time = std::time::Instant::now();
+        let result = $func;
+        let elapsed = start_time.elapsed();
+        println!("{:?} tps ~{:.2}", elapsed, 1.0 / elapsed.as_secs_f64());
+
+        result
+    }};
 }
 
 impl ActiveEventLoop {
